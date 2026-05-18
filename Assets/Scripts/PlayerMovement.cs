@@ -38,6 +38,10 @@ public class PlayerMovement : MonoBehaviour
     [Tooltip("Munición máxima del arma (se recarga al tocar el suelo)")]
     [SerializeField] private int gunAmmo = 3;
     private int currentGunAmmo;
+    
+    [Header("Sprite")]
+    [Tooltip("Sprite del jugador, se voltea al cambiar de dirección")]
+    [SerializeField] private SpriteRenderer sprite;
 
     /// <summary>
     /// Awake se ejecuta antes que Start. Obtenemos el componente Rigidbody2D.
@@ -77,6 +81,12 @@ public class PlayerMovement : MonoBehaviour
         // Si no hay input horizontal, no modificamos la velocidad
         if (hor == 0f)
             return;
+        
+        // Volteamos el sprite según la dirección del movimiento
+            if (hor > 0f)
+                sprite.flipX = true; // Mirando a la derecha
+            else if (hor < 0f)
+                sprite.flipX = false;  // Mirando a la izquierda
 
         rb.linearVelocity = new Vector2(hor * speed, rb.linearVelocity.y);
     }
@@ -168,8 +178,6 @@ public class PlayerMovement : MonoBehaviour
     /// </summary>
     private void OnDrawGizmos()
     {
-        if (groundCheck == null) return;
-
         Gizmos.color = Color.red;
         Gizmos.DrawLine(
             groundCheck.transform.position,

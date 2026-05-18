@@ -1,5 +1,7 @@
+using MelenitasDev.SoundsGood;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
@@ -22,17 +24,29 @@ public class GameManager : MonoBehaviour
     [Header("UI - HUD (durante el juego)")]
     [SerializeField] private TextMeshProUGUI scoreText;       // Texto de monedas en pantalla
     [SerializeField] private TextMeshProUGUI timerText;       // Texto del cronómetro en pantalla
+    
+    
+    [Header("UI - Pantalla Clasificación")]
+    [SerializeField] private GameObject leaderboardPanel;     // Panel del leaderboard (canvas overlay
 
     [Header("UI - Pantalla Game Over")]
     [SerializeField] private GameObject gameOverPanel;        // Panel que se muestra al morir
     [SerializeField] private TextMeshProUGUI finalScoreText;  // Puntuación final
     [SerializeField] private TextMeshProUGUI finalTimeText;   // Tiempo final
+    [SerializeField] private string menuSceneName = "Menu"; // Nombre de la escena del menú principal
 
+    private Music music;
+    
     /// <summary>
     /// Awake se ejecuta antes que Start. Aquí configuramos el Singleton.
     /// </summary>
     private void Awake()
     {
+        music = new Music(Track.musicLoop)
+            .SetLoop(true)
+            .SetVolume(AudioSettingsManager.Instance.CurrentMusicVolumeLinear)
+            .SetOutput(Output.Music);
+        
         // Si ya existe una instancia, destruimos este duplicado
         if (Instance != null && Instance != this)
         {
@@ -54,10 +68,18 @@ public class GameManager : MonoBehaviour
         // Ocultamos el panel de Game Over al empezar
         if (gameOverPanel != null)
             gameOverPanel.SetActive(false);
+        
+        // Ocultamos el panel de la clasificacion al empezar
+        if (leaderboardPanel != null)
+            leaderboardPanel.SetActive(false);
+        
 
         // Actualizamos la UI con los valores iniciales
         UpdateScoreUI();
         UpdateTimerUI();
+        
+        // reproduce la música de fondo
+        music.Play();
     }
 
     /// <summary>
@@ -83,7 +105,15 @@ public class GameManager : MonoBehaviour
         score++;
         UpdateScoreUI();
     }
-
+    public void TakeAllPoints()
+    {
+        if (isGameOver) return; // No restar puntos si el juego terminó
+        
+        if (score >= 23)
+            GameOver();
+        
+        UpdateScoreUI();
+    }
     /// <summary>
     /// Activa el estado de Game Over. Llamado cuando el jugador muere.
     /// </summary>
@@ -102,11 +132,12 @@ public class GameManager : MonoBehaviour
             gameOverPanel.SetActive(true);
 
             if (finalScoreText != null)
-                finalScoreText.text = "Monedas: " + score;
+                finalScoreText.text = "Monedas: " + score + " / 23";
 
             if (finalTimeText != null)
                 finalTimeText.text = "Tiempo: " + FormatTime(elapsedTime);
         }
+        music.Stop();
     }
 
     /// <summary>
@@ -136,7 +167,7 @@ public class GameManager : MonoBehaviour
     private void UpdateScoreUI()
     {
         if (scoreText != null)
-            scoreText.text = "Monedas: " + score;
+            scoreText.text = "Monedas: " + score + " / 23";
     }
 
     /// <summary>
@@ -158,4 +189,20 @@ public class GameManager : MonoBehaviour
         int seconds = Mathf.FloorToInt(timeInSeconds % 60f);
         return string.Format("{0:00}:{1:00}", minutes, seconds);
     }
+    
+    public void switchToMainMenu()
+    {
+        Time.timeScale = 1f; // Aseguramos que el tiempo esté normalizado
+        SceneManager.LoadScene(menuSceneName);
+    }
+
+    /// <summary>
+    /// Devuelve la puntuación actual (monedas recogidas).
+    /// </summary>
+    public int GetScore() => score;
+
+    /// <summary>
+    /// Devuelve el tiempo transcurrido en segundos.
+    /// </summary>
+    public float GetElapsedTime() => elapsedTime;
 }
